@@ -3,7 +3,8 @@
 //  Cookie Stumbler
 //
 //  Created by David Schiefer on 16.07.12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//  Copyright (c) 2012 David Schiefer. 
+//  You may use this class as long as you acknowledge its source.
 //
 
 #import <Foundation/Foundation.h>
