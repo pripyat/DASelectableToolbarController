@@ -4,7 +4,7 @@
 //
 //  Created by David Schiefer on 16.07.12.
 //  Copyright (c) 2012 David Schiefer. 
-//  You may use this class as long as you acknowledge its source.
+//  You may use this class in any project as long as you acknowledge its author.
 //
 
 #import <Foundation/Foundation.h>
