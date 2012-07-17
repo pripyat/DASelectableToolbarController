@@ -11,6 +11,7 @@
 @implementation DASelectableToolbarController
 
 @synthesize layout = _layout;
+@synthesize delegate = __delegate;
 
 - (void)setWindow:(NSWindow *)window
 {
@@ -50,6 +51,22 @@
         [_toolBar setSelectedItemIdentifier:[_relevantItem itemIdentifier]];
         [_hostWindow setTitle:[_relevantItem label]];
         
+        if ([self.delegate respondsToSelector:@selector(numberForWindowHeightForItemIndex:)])
+        {
+            NSRect _prevFrame = _hostWindow.frame;
+            float _delegateHeight = [self.delegate numberForWindowHeightForItemIndex:index];
+            
+            if (_delegateHeight != _prevFrame.size.height)
+            {
+                /* we want the content to resize, but the window's y origin shouldn't change */
+                _prevFrame.origin.y += _prevFrame.size.height - _delegateHeight;
+
+                _prevFrame.size.height = _delegateHeight;
+                
+                [_hostWindow setFrame:_prevFrame display:YES animate:YES];
+            }
+        }
+
         [self selectTabViewItemWithIdentifier:[_relevantItem itemIdentifier]];
     }
 }
@@ -118,7 +135,7 @@
 }
 
 - (void)_switchView:(id)sender
-{
+{    
     [self selectItemAtIndex:[_toolbarItems indexOfObject:sender]];
 }
 
@@ -182,6 +199,8 @@
     [_hostWindow release];
 
     [_toolbarItems release];
+    
+    self.delegate = nil;
     
     [super dealloc];
 }
