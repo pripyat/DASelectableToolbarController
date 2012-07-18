@@ -51,10 +51,13 @@
         [_toolBar setSelectedItemIdentifier:[_relevantItem itemIdentifier]];
         [_hostWindow setTitle:[_relevantItem label]];
         
-        if ([self.delegate respondsToSelector:@selector(numberForWindowHeightForItemIndex:)])
+        float _originalHeight = _hostWindow.frame.size.height;
+        float _delegateHeight = 0.0f;
+        
+        if ([self.delegate respondsToSelector:@selector(numberForWindowHeightForItemAtIndex:)])
         {
             NSRect _prevFrame = _hostWindow.frame;
-            float _delegateHeight = [self.delegate numberForWindowHeightForItemIndex:index];
+            _delegateHeight = [self.delegate numberForWindowHeightForItemAtIndex:index];
             
             if (_delegateHeight != _prevFrame.size.height)
             {
@@ -68,6 +71,27 @@
         }
 
         [self selectTabViewItemWithIdentifier:[_relevantItem itemIdentifier]];
+        
+        /* the objects inside the view need to be moved too */
+        if (self.delegate != nil && _delegateHeight != 0.0f && _originalHeight > _delegateHeight)
+        {
+            for (id _object in [self.subviews.lastObject subviews])
+            {
+                if ([_object respondsToSelector:@selector(frame)])
+                {
+                    NSRect _objectRect = [_object frame];
+                
+                    _objectRect.origin.y -= _originalHeight - _delegateHeight;
+
+                    if (_objectRect.origin.y > 0.0f)
+                    {
+                        NSLog(@"New Y: %f",_objectRect.origin.y);
+                        
+                        [_object setFrame:_objectRect];
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -42,7 +42,7 @@ The layout can be set using the `layout` property:
 
 Not every preference pane you've created may have the same amount of content in it, so you will require the Preference window to resize to the correct size. Therefore, this class implements a delegate method that will allow you to do just that:
 
-`- (float)numberForWindowHeightForItemIndex:(NSUInteger)index`
+`- (float)numberForWindowHeightForItemAtIndex:(NSUInteger)index`
 
 Use this method to return the desired height (as a float) for each tab. Note that this method is **optional**. If you don't implement this method, `DASelectableToolbarController` will simply use its host window's size across all tabs.
 
