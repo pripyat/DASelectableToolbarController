@@ -15,7 +15,7 @@ enum
 };
 typedef NSUInteger DASelectableToolbarLayout;
 
-@interface DASelectableToolbarController : NSTabView <NSToolbarDelegate>
+@interface DASelectableToolbarController : NSTabView <NSToolbarDelegate,NSWindowDelegate>
 {
     @private
     NSToolbar*_toolBar;

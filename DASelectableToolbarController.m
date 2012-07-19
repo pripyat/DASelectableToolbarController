@@ -44,6 +44,8 @@
 
 - (void)selectItemAtIndex:(NSUInteger)index
 {
+    NSAutoreleasePool*pool = [[NSAutoreleasePool alloc] init];
+    
     NSToolbarItem*_relevantItem = [_toolbarItems objectAtIndex:index];
     
     if (_relevantItem != nil)
@@ -51,48 +53,63 @@
         [_toolBar setSelectedItemIdentifier:[_relevantItem itemIdentifier]];
         [_hostWindow setTitle:[_relevantItem label]];
         
-        float _originalHeight = _hostWindow.frame.size.height;
         float _delegateHeight = 0.0f;
+        
+        [self selectTabViewItemWithIdentifier:[_relevantItem itemIdentifier]];
         
         if ([self.delegate respondsToSelector:@selector(numberForWindowHeightForItemAtIndex:)])
         {
             NSRect _prevFrame = _hostWindow.frame;
             _delegateHeight = [self.delegate numberForWindowHeightForItemAtIndex:index];
             
+            NSView*_activeView = [self.subviews lastObject];
+            
             if (_delegateHeight != _prevFrame.size.height)
             {
-                /* we want the content to resize, but the window's y origin shouldn't change */
-                _prevFrame.origin.y += _prevFrame.size.height - _delegateHeight;
-
-                _prevFrame.size.height = _delegateHeight;
+                NSRect _viewRect = _activeView.frame;
+                _viewRect.origin = NSMakePoint(0.0f, 0.0f);
                 
-                [_hostWindow setFrame:_prevFrame display:YES animate:YES];
-            }
-        }
-
-        [self selectTabViewItemWithIdentifier:[_relevantItem itemIdentifier]];
-        
-        /* the objects inside the view need to be moved too */
-        if (self.delegate != nil && _delegateHeight != 0.0f && _originalHeight > _delegateHeight)
-        {
-            for (id _object in [self.subviews.lastObject subviews])
-            {
-                if ([_object respondsToSelector:@selector(frame)])
-                {
-                    NSRect _objectRect = [_object frame];
+                [_activeView setFrame:_viewRect];
                 
-                    _objectRect.origin.y -= _originalHeight - _delegateHeight;
-
-                    if (_objectRect.origin.y > 0.0f)
-                    {
-                        NSLog(@"New Y: %f",_objectRect.origin.y);
-                        
-                        [_object setFrame:_objectRect];
-                    }
-                }
+                [self _resizeWindowForContentSize:NSMakeSize(_activeView.frame.size.width, _delegateHeight)];
             }
         }
     }
+    
+    [pool drain]; /* Calling 'drain' in case the host project uses ARC */
+}
+
+- (NSViewAnimation *)_animator
+{
+    /* use this animation getter in case you want transition animations */
+    NSViewAnimation*_vAnim = [[NSViewAnimation alloc] init];
+    
+    [_vAnim setDuration:0.2f];
+    [_vAnim setAnimationBlockingMode:NSAnimationBlocking];
+    [_vAnim setAnimationCurve:NSAnimationEaseInOut];
+
+    return [_vAnim autorelease];
+}
+
+- (void)_resizeWindowForContentSize:(NSSize) size 
+{
+    NSRect _windowFrame = [_hostWindow contentRectForFrameRect:_hostWindow.frame];
+    
+    NSRect _newWindowFrame = [self.window frameRectForContentRect:
+                             NSMakeRect(NSMinX(_windowFrame), NSMaxY(_windowFrame) - size.height, size.width, size.height)];
+    
+    /* Resize Window Content */
+    for (id aView in [_hostWindow.contentView subviews])
+    {
+        if ([aView respondsToSelector:@selector(setFrame:)])
+        {
+            NSRect _objectRect = [aView frame];
+            _objectRect.origin.y += _windowFrame.origin.y - _newWindowFrame.origin.y;
+            [aView setFrame:_objectRect];
+        }
+    }
+    
+    [_hostWindow setFrame:_newWindowFrame display:YES animate:_hostWindow.isVisible];
 }
 
 - (void)addToolbarItem:(NSToolbarItem *)item
@@ -128,6 +145,8 @@
 
 - (void)_setupToolbar:(NSToolbar *)toolbar
 {
+    [_hostWindow setDelegate:self];
+    
     if (self.layout == DASelectableToolbarLayoutCentered)
     {
         [self addToolbarItem:[self _flexibleSpaceItem]];
