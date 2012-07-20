@@ -13,6 +13,9 @@
 @synthesize layout = _layout;
 @synthesize delegate = __delegate;
 
+static NSToolbarItem*_selectedItem = nil;
+static NSView*_replacedView = nil;
+
 - (void)setWindow:(NSWindow *)window
 {
     /* Default Layout */
@@ -22,8 +25,15 @@
     _toolbarItems = [[NSMutableArray alloc] init];
     _toolBar = [[NSToolbar alloc] initWithIdentifier:@"Identifier"];
     
-    _hostWindow = [window retain];
+    /* Memory Management */
+    if (_hostWindow != nil)
+    {
+        [_hostWindow release];
+        _hostWindow = nil;
+    }
     
+    _hostWindow = [window retain];
+        
     /* Configure NSTabView */
     [self setTabViewType:NSNoTabsNoBorder];
     
@@ -42,6 +52,11 @@
     return _hostWindow;
 }
 
+- (NSToolbarItem *)selectedItem
+{
+    return _selectedItem;
+}
+
 - (void)selectItemAtIndex:(NSUInteger)index
 {
     NSAutoreleasePool*pool = [[NSAutoreleasePool alloc] init];
@@ -50,6 +65,22 @@
     
     if (_relevantItem != nil)
     {
+        if (_replacedView != nil)
+        {
+            [self replaceSubview:[self.subviews lastObject] with:_replacedView];
+            
+            [_replacedView release];
+            _replacedView  = nil;
+        }
+        
+        if (_selectedItem != nil)
+        {
+            [_selectedItem release];
+            _selectedItem = nil;
+        }
+        
+        _selectedItem = [_relevantItem retain];
+        
         [_toolBar setSelectedItemIdentifier:[_relevantItem itemIdentifier]];
         [_hostWindow setTitle:[_relevantItem label]];
         
@@ -74,9 +105,25 @@
                 [self _resizeWindowForContentSize:NSMakeSize(_activeView.frame.size.width, _delegateHeight)];
             }
         }
+        
+        if ([self.delegate respondsToSelector:@selector(didSelectToolbarItem:)])
+        {
+            dispatch_async(dispatch_get_main_queue(), 
+            ^{
+                [self.delegate didSelectToolbarItem:_relevantItem];
+            });
+        }
     }
     
     [pool drain]; /* Calling 'drain' in case the host project uses ARC */
+}
+
+- (void)insertView:(NSView *)view
+{
+    _replacedView = [[self.subviews lastObject] retain];
+    
+    [self replaceSubview:[self.subviews lastObject] with:view];
+    [self _resizeWindowForContentSize:view.frame.size];
 }
 
 - (NSViewAnimation *)_animator
@@ -242,6 +289,8 @@
     [_hostWindow release];
 
     [_toolbarItems release];
+    
+    [_selectedItem release];
     
     self.delegate = nil;
     

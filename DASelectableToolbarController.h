@@ -33,11 +33,14 @@ typedef NSUInteger DASelectableToolbarLayout;
 
 - (void)selectItemAtIndex:(NSUInteger)index;
 
+- (void)insertView:(NSView *)view;
+
 @property (retain) id delegate;
 
 @property (assign) IBOutlet NSWindow*window;
 @property (assign) DASelectableToolbarLayout layout; /* Default - DASelectableToolbarLayoutCentered */
 
+@property (readonly) NSToolbarItem*selectedItem;
 @property (readonly) NSToolbar*toolbar;
 
 @end
@@ -46,5 +49,7 @@ typedef NSUInteger DASelectableToolbarLayout;
 
 @optional
 - (float)numberForWindowHeightForItemAtIndex:(NSUInteger)index;
+
+- (void)didSelectToolbarItem:(NSToolbarItem *)item;
 
 @end
